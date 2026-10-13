@@ -88,7 +88,7 @@ Bangla automatically. The choice is remembered in `localStorage`
 ## Running locally
 
 ```bash
-cd template1
+cd template2-standard
 python3 -m http.server 8080
 # open http://localhost:8080
 ```
