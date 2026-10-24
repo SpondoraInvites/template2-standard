@@ -44,6 +44,11 @@
       shareInvitation: "Share this Invitation",
       shareAria: "Share this invitation",
       share: "Share",
+      shareCopy: "Copy link",
+      shareWhatsApp: "WhatsApp",
+      shareMessenger: "Messenger",
+      shareTelegram: "Telegram",
+      shareEmail: "Email",
       socialInstagram: "Spondora Invites on Instagram",
       socialFacebook: "Spondora Invites on Facebook",
       viewOnMap: "View on Map \u2197",
@@ -79,6 +84,11 @@
       shareInvitation: "এই আমন্ত্রণটি শেয়ার করুন",
       shareAria: "এই আমন্ত্রণটি শেয়ার করুন",
       share: "শেয়ার",
+      shareCopy: "লিংক কপি করুন",
+      shareWhatsApp: "হোয়াটসঅ্যাপ",
+      shareMessenger: "মেসেঞ্জার",
+      shareTelegram: "টেলিগ্রাম",
+      shareEmail: "ইমেইল",
       socialInstagram: "ইনস্টাগ্রামে স্পন্দোরা ইনভাইটস",
       socialFacebook: "ফেসবুকে স্পন্দোরা ইনভাইটস",
       viewOnMap: "মানচিত্রে দেখুন \u2197",
@@ -383,7 +393,11 @@
     setInterval(tick, 1000);
   }
 
-  /* ============ 5. Share ============ */
+  /* ============ 5. Share — channel menu ============
+     Each [data-share-button] opens (via aria-controls) its [data-share-menu]:
+     copy link, WhatsApp, Messenger, Telegram, email. Channels compose
+     prefilled links — no backend — and copying has a legacy-http fallback
+     with toast feedback. */
   var toast = $("#toast");
   var toastTimer;
 
@@ -395,29 +409,29 @@
     toastTimer = setTimeout(function () { toast.classList.remove("is-visible"); }, 2600);
   }
 
-  function share() {
-    var data = {
-      title: document.title,
-      text: t.shareText
-        .replace("{names}", c.couple.name1 + " " + t.nameSep + " " + c.couple.name2)
-        .replace("{date}", c.dateDisplay)
-        .replace("{city}", c.city),
-      url: location.origin === "null" || location.protocol === "file:"
-        ? "https://your-invite-link.example"
-        : location.href,
-    };
-    if (navigator.share) {
-      navigator.share(data).catch(function () { /* user dismissed */ });
-      return;
-    }
+  function inviteLink() {
+    return location.origin === "null" || location.protocol === "file:"
+      ? "https://your-invite-link.example"
+      : location.href;
+  }
+
+  function inviteText() {
+    return t.shareText
+      .replace("{names}", c.couple.name1 + " " + t.nameSep + " " + c.couple.name2)
+      .replace("{date}", c.dateDisplay)
+      .replace("{city}", c.city);
+  }
+
+  function copyInvite() {
+    var url = inviteLink();
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(data.url).then(
+      navigator.clipboard.writeText(url).then(
         function () { showToast(t.linkCopied); },
-        function () { fallbackCopy(data.url); }
+        function () { fallbackCopy(url); }
       );
       return;
     }
-    fallbackCopy(data.url);
+    fallbackCopy(url);
   }
 
   function fallbackCopy(text) {
@@ -437,22 +451,78 @@
     document.body.removeChild(ta);
   }
 
-  ["#shareBtn", "#shareFab"].forEach(function (sel) {
-    var btn = $(sel);
-    if (btn) btn.addEventListener("click", share);
+  var enc = encodeURIComponent;
+  // Channel actions; `copy` opens no link — it copies and toasts instead.
+  var shareActions = {
+    copy: copyInvite,
+    whatsapp: function () {
+      window.open("https://wa.me/?text=" + enc(inviteText() + "\n" + inviteLink()), "_blank", "noopener");
+    },
+    // shortcut: deep link only opens the Messenger app (mobile); the desktop
+    // web dialog needs a registered Facebook app ID
+    messenger: function () {
+      window.open("fb-messenger://share/?link=" + enc(inviteLink()), "_blank", "noopener");
+    },
+    telegram: function () {
+      window.open("https://t.me/share/url?url=" + enc(inviteLink()) + "&text=" + enc(inviteText()), "_blank", "noopener");
+    },
+    email: function () {
+      location.href = "mailto:?subject=" + enc(inviteText()) + "&body=" + enc(inviteText() + "\n" + inviteLink());
+    },
+  };
+
+  var sharePairs = [];
+  $$("[data-share-button]").forEach(function (button) {
+    var menu = document.getElementById(button.getAttribute("aria-controls") || "");
+    if (!menu) return;
+    menu.hidden = false; // JS is healthy — the class system takes over from [hidden]
+
+    var setOpen = function (open) {
+      menu.classList.toggle("open", open);
+      button.setAttribute("aria-expanded", String(open));
+    };
+
+    button.addEventListener("click", function () {
+      setOpen(!menu.classList.contains("open"));
+    });
+
+    // Outside click closes this menu (its own opener keeps toggling above).
+    document.addEventListener("click", function (e) {
+      if (menu.classList.contains("open") &&
+          !menu.contains(e.target) &&
+          e.target.closest("[data-share-button]") !== button) setOpen(false);
+    });
+
+    Object.keys(shareActions).forEach(function (key) {
+      var b = menu.querySelector('[data-share="' + key + '"]');
+      if (!b) return;
+      b.addEventListener("click", function () {
+        shareActions[key]();
+        if (key !== "copy") setOpen(false); // copy stays open to show the toast
+      });
+    });
+
+    sharePairs.push({ button: button, menu: menu, setOpen: setOpen });
   });
 
-  /* ============ 6. Floating share pill appears after hero ============ */
-  var fab = $("#shareFab");
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    sharePairs.forEach(function (p) {
+      if (p.menu.classList.contains("open")) { p.setOpen(false); p.button.focus(); }
+    });
+  });
+
+  /* ============ 6. Floating share dock appears after hero ============ */
+  var dock = $("#shareDock");
   var hero = $(".hero");
-  if (fab && hero && "IntersectionObserver" in window) {
+  if (dock && hero && "IntersectionObserver" in window) {
     new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
-        fab.classList.toggle("is-visible", !e.isIntersecting);
+        dock.classList.toggle("is-visible", !e.isIntersecting);
       });
     }, { rootMargin: "-72px 0px 0px 0px" }).observe(hero);
-  } else if (fab) {
-    fab.classList.add("is-visible");
+  } else if (dock) {
+    dock.classList.add("is-visible");
   }
 
   /* ============ 7. Reveal on scroll ============ */

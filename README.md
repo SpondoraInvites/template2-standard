@@ -14,7 +14,8 @@ embedded venue map, and one-tap share.
 - Event details (unlimited event cards — side by side on desktop)
 - Venue with Google Maps embed + directions (split details/map layout on desktop)
 - Add-to-Calendar (Google Calendar) per event
-- Shareable link (Web Share API + copy-link fallback)
+- Share menu — copy link, WhatsApp, Messenger, Telegram, email
+  (floating share pill after the hero)
 - Mobile optimized; desktop gets a full-width layout (wide arch hero with
   flanking botanical branches, families side by side, event card grid,
   two-column venue section)

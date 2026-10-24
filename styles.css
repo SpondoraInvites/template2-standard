@@ -677,13 +677,90 @@ button { font: inherit; cursor: pointer; }
   color: var(--emerald-deep);
 }
 
-/* ============ Share FAB + toast ============ */
-.share-fab {
+/* ============ Share menus, floating dock + toast ============ */
+/* Channel menus (copy / WhatsApp / Messenger / Telegram / email) — opened by
+   [data-share-button]; wired in script.js section 5. */
+.share {
+  position: relative;
+  display: inline-flex;
+}
+
+.share-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  z-index: 55;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: max-content;
+  max-width: min(92vw, 430px);
+  padding: 8px;
+  color: var(--emerald);
+  background: var(--cream-soft);
+  border: 1px solid var(--gold);
+  border-radius: 20px;
+  box-shadow: 0 14px 34px -12px rgba(11, 43, 33, 0.6);
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, -4px);
+  /* Overlay as a dropdown below the button — opening never reflows the page. */
+  transition: opacity 0.28s ease, transform 0.28s ease, visibility 0s linear 0.28s;
+}
+
+.share-menu.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+.share-menu button {
+  appearance: none;
+  font: inherit;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--emerald);
+  background: transparent;
+  border: 1px solid var(--gold-line);
+  border-radius: 999px;
+  padding: 0.9em 1.3em;
+  cursor: pointer;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.share-menu button:hover,
+.share-menu button:focus-visible {
+  background: var(--gold);
+  color: var(--emerald-deep);
+}
+
+/* Floating share dock — fixed pill; its menu opens above it, both revealed
+   together once the hero has scrolled out of view (script.js section 6). */
+.share-dock {
   position: fixed;
   left: 50%;
   bottom: calc(18px + env(safe-area-inset-bottom, 0px));
-  transform: translateX(-50%) translateY(0);
+  transform: translateX(-50%);
   z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.share-dock.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.share-fab {
   display: inline-flex;
   align-items: center;
   gap: 9px;
@@ -697,19 +774,22 @@ button { font: inherit; cursor: pointer; }
   border: 1px solid var(--gold);
   border-radius: 999px;
   box-shadow: 0 10px 30px -8px rgba(11, 43, 33, 0.55);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.35s ease, transform 0.35s ease, background 0.3s ease;
+  transition: background 0.3s ease;
 }
 
 .share-fab svg { width: 16px; height: 16px; }
 
-.share-fab.is-visible {
-  opacity: 1;
-  pointer-events: auto;
+.share-fab:hover { background: var(--gold-soft); }
+
+/* The dock's channel menu opens upward, above the pill */
+.share-menu--fab {
+  top: auto;
+  bottom: calc(100% + 8px);
+  transform: translate(-50%, 4px);
+  border-radius: 24px;
 }
 
-.share-fab:hover { background: var(--gold-soft); }
+.share-menu--fab.open { transform: translate(-50%, 0); }
 
 .toast {
   position: fixed;
