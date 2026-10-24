@@ -650,6 +650,33 @@ button { font: inherit; cursor: pointer; }
   color: rgba(223, 233, 221, 0.55);
 }
 
+.footer__socials {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin: 26px 0 0;
+}
+
+.footer__social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  color: var(--gold-soft);
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.footer__social svg { width: 20px; height: 20px; }
+
+.footer__social:hover,
+.footer__social:focus-visible {
+  background: var(--gold);
+  color: var(--emerald-deep);
+}
+
 /* ============ Share FAB + toast ============ */
 .share-fab {
   position: fixed;
